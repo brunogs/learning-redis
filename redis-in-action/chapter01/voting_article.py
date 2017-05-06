@@ -1,6 +1,7 @@
 
 ONE_WEEK_IN_SECONDS = 7 * 86400
 VOTE_SCORE = 432
+ARTICLES_PER_PAGE = 25
 
 def article_vote(conn, user, article):
     cutoff = time.time() - ONE_WEEK_IN_SECONDS
@@ -34,3 +35,16 @@ def post_article(conn, user, title, link):
     conn.zadd('time:', article, now)
 
     return article_id
+
+def get_articles(conn, page, order='score:'):
+    start = (page-1) * ARTICLES_PER_PAGE
+    end = start + ARTICLES_PER_PAGE - 1
+
+    ids = conn.zrevrange(order, start, end)
+    articles = []
+    for id in ids:
+        article_data = conn.hgetall(id)
+        article_data['id'] = id
+        articles.append(article_data)
+
+    return articles
