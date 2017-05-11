@@ -18,3 +18,8 @@ wget -q http://peak.telecommunity.com/dist/ez_setup.py
 sudo python ez_setup.py
 sudo python -m easy_install redis hiredis
 ```
+
+* Running Redis Server
+```
+redis-server redis.conf
+```
