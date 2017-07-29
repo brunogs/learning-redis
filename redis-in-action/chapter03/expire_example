@@ -1,0 +1,26 @@
+>>> import redis
+>>> conn = redis.Redis()
+>>> conn.set('key', 'value')
+True
+>>> conn.get('key')
+'value'
+>>> conn.expire('key', 2)
+True
+>>> time.sleep(2)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'time' is not defined
+>>> import time
+>>> time.sleep(2)
+>>> conn.get('key')
+>>> conn.set('key', 'value2')
+True
+>>> conn.expire('key', 100); conn.ttl('key')
+True
+100L
+>>> conn.get('key')
+'value2'
+>>> conn.get('key')
+'value2'
+>>> 
+
