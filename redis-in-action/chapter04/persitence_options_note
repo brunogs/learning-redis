@@ -1,0 +1,5 @@
+There are two different ways of persisting data to disk.
+
+Snapshotting -> takes data that exists at one moment and writes it to disk
+
+AOF (append-only file) -> copy incoming write commands to disk
