@@ -3,3 +3,16 @@ There are two different ways of persisting data to disk.
 Snapshotting -> takes data that exists at one moment and writes it to disk
 
 AOF (append-only file) -> copy incoming write commands to disk
+
+
+There are five methods to initiate a snapshot, which are listed as follows:
+
+- Any Redis client can initiate a snapshot by calling the BGSAVE command. On platforms that support BGSAVE (basically all platforms except for Windows), Redis will fork,[1] and the child process will write the snapshot to disk while the parent process continues to respond to commands.
+1 When a process forks, the underlying operating system makes a copy of the process. On Unix and Unix-like systems, the copying process is optimized such that, initially, all memory is shared between the child and parent processes. When either the parent or child process writes to memory, that memory will stop being shared.
+
+- A Redis client can also initiate a snapshot by calling the SAVE command, which causes Redis to stop responding to any/all commands until the snapshot completes. This command isn’t commonly used, except in situations where we need our data on disk, and either we’re okay waiting for it to complete, or we don’t have enough memory for a BGSAVE.
+
+- If Redis is configured with save lines, such as save 60 10000, Redis will automatically trigger a BGSAVE operation if 10,000 writes have occurred within 60 seconds since the last successful save has started (using the configuration option described). When multiple save lines are present, any time one of the rules match, a BGSAVE is triggered.
+
+- When Redis receives a request to shut down by the SHUTDOWN command, or it receives a standard TERM signal, Redis will perform a SAVE, blocking clients from performing any further commands, and then shut down.
+- If a Redis server connects to another Redis server and issues the SYNC command to begin replication, the master Redis server will start a BGSAVE operation if one isn’t already executing or recently completed. See section 4.2 for more information about replication.
