@@ -1,4 +1,5 @@
 import redis
+import bisect
 
 
 def add_update_contact(conn, user, contact):
@@ -21,6 +22,14 @@ def fetch_autocomplete_list(conn, user, prefix):
     return matches
 
 
+valid_characters = '`abcdefghijklmnopqrstuvwxyz{'
+
+def find_prefix_range(prefix):
+    posn = bisect.bisect_left(valid_characters, prefix[-1:])
+    suffix = valid_characters[(posn or 1) - 1]
+    return prefix[:-1] + suffix + '{', prefix + '{'
+
+
 print "Testing"
 conn = redis.Redis()
 add_update_contact(conn, 'brunogs', 'Virginia')
@@ -30,4 +39,6 @@ print fetch_autocomplete_list(conn, 'brunogs', 'vir')
 remove_contact(conn, 'brunogs', 'Virginia')
 print conn.lrange('recent:brunogs', 0, -1)
 
+
+print find_prefix_range('Vir')
 
