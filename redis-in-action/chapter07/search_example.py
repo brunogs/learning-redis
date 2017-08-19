@@ -34,9 +34,30 @@ def index_document(conn, docid, content):
     return len(pipeline.execute())
 
 
+def _set_common(conn, method, names, ttl=30, execute=True):
+    id = str(uuid.uuid4())
+    pipeline = conn.pipeline(True) if execute else conn
+    names = ['idx:' + name for name in names]
+    getattr(pipeline, method)('idx:' + id, *names)
+    pipeline.expire('idx:' + id, ttl)
+    if execute:
+        pipeline.execute()
+    return id
+
+def intersect(conn, items, ttl=30, _execute=True):
+    return _set_common(conn, 'sinterstore', items, ttl, _execute)
+
+def union(conn, items, ttl=30, _execute=True):
+    return _set_common(conn, 'sunionstore', items, ttl, _execute)
+
+def difference(conn, items, ttl=30, _execute=True):
+    return _set_common(conn, 'sdiffstore', items, ttl, _execute)
+
+
 ##Simple test
 
 conn = redis.Redis()
+print 'Testing simple index'
 index_document(conn, 'docA', 'lord of the rings')
 index_document(conn, 'docA', 'lord of the dance')
 created_sets = conn.keys("*idx*")
