@@ -1,5 +1,6 @@
 import re
 import redis
+import uuid
 
 
 STOP_WORDS = set('''able about across after all almost also am among
@@ -15,6 +16,7 @@ would yet you your'''.split())
 # https://www.textfixer.com/tutorials/
 
 WORDS_RE = re.compile("[a-z']{2,}")
+QUERY_RE = re.compile("[+-]?[a-z']{2,}")
 
 def tokenize(content):
     words = set()
@@ -54,9 +56,39 @@ def difference(conn, items, ttl=30, _execute=True):
     return _set_common(conn, 'sdiffstore', items, ttl, _execute)
 
 
-##Simple test
+def parse(query):
+    unwanted = set()
+    all = []
+    current = set()
+    for match in QUERY_RE.finditer(query.lower()):
+        word = match.group()
+        prefix = word[:1]
+        if prefix in '+-':
+            word = word[1:]
+        else:
+            prefix = None
+        word = word.strip("'")
+        if len(word) < 2 or word in STOP_WORDS:
+            continue
+
+        if prefix == '-':
+            unwanted.add(word)
+            continue
+
+        if current and not prefix:
+            all.append(list(current))
+            current = set()
+        current.add(word)
+
+    if current:
+        all.append(list(current))
+    return all, list(unwanted)
+
+
+##Simple tests
 
 conn = redis.Redis()
+
 print 'Testing simple index'
 index_document(conn, 'docA', 'lord of the rings')
 index_document(conn, 'docA', 'lord of the dance')
@@ -65,4 +97,17 @@ print created_sets
 for key in created_sets:
     print 'content in key=%s'%key
     print conn.smembers(key)
+
+
+
+print 'Testing parse'
+contentQuery = '''
+connect +connection +disconnect +disconnection
+chat
+-proxy -proxies'''
+
+allWords, unwantedWords = parse(contentQuery)
+print 'All words: %s'%allWords
+print 'Unwanted words: %s'%unwantedWords
+
 
