@@ -23,3 +23,5 @@ sudo python -m easy_install redis hiredis
 ```
 redis-server redis.conf
 ```
+
+![set_common](set_common.jpg)
