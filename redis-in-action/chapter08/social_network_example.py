@@ -27,6 +27,31 @@ def create_user(conn, login, name):
     # release_lock(conn, 'user:' + login, lock)
     return id
 
+def create_status(conn, uid, message, **data):
+    pipeline = conn.pipeline(True)
+    pipeline.hget('users:%s'%uid, 'login')
+    pipeline.incr('status:id:')
+    login, id = pipeline.execute()
+
+    print login
+    print data
+
+    if not login:
+        return None
+
+    data.update({
+        'message': message,
+        'posted': time.time(),
+        'id': id,
+        'uid': uid,
+        'login': login,
+    })
+    pipeline.hmset('status:%s'%id, data)
+    pipeline.hincrby('user:%s'%uid, 'posts')
+    pipeline.execute()
+    return id
+
+
 
 def cleanup(conn, keyPattern):
     for key in conn.keys(keyPattern):
@@ -41,3 +66,8 @@ print 'Should create an user'
 user_id = create_user(conn, 'btuttin', 'Bruno Silva')
 print 'user created with id=%s'%user_id
 print conn.hgetall('users:%s'%user_id)
+print '\n'
+print 'should create status for user'
+status_id = create_status(conn, user_id, 'Redis is awesome')
+print 'status created withid=%s'%status_id
+print conn.hgetall('status:%s'%status_id)
