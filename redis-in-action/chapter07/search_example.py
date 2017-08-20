@@ -84,6 +84,29 @@ def parse(query):
         all.append(list(current))
     return all, list(unwanted)
 
+def parse_and_search(conn, query, ttl=30):
+    all, unwanted = parse(query)
+    if not all:
+        return None
+
+    to_intersect = []
+    for syn in all:
+        if len(syn) > 1:
+            to_intersect.append(union(conn, syn, ttl=ttl))
+        else:
+            to_intersect.append(syn[0])
+
+    if len(to_intersect) > 1:
+        intersect_result = intersect(conn, to_intersect, ttl=ttl)
+    else:
+        intersect_result = to_intersect[0]
+
+    if unwanted:
+        unwanted.insert(0, intersect_result)
+        return difference(conn, unwanted, ttl=ttl)
+
+    return intersect_result
+
 
 ##Simple tests
 
