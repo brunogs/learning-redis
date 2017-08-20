@@ -108,6 +108,25 @@ def parse_and_search(conn, query, ttl=30):
     return intersect_result
 
 
+def search_and_sort(conn, query, id=None, ttl=300, sort="-updated", start=0, num=20):
+    desc = sort.startswith('-')
+    sort = sort.lstrip('-')
+    by = "kb:doc:*->" + sort
+    alpha = sort not in ('updated', 'id', 'created')
+
+    if id and not conn.expire(id, ttl):
+        id = None
+
+    if not id:
+        id = parse_and_search(conn, query, ttl=ttl)
+
+    pipeline = conn.pipeline(True)
+    pipeline.scard('idx:' + id)
+    pipeline.sort('idx:' _ id, by=by, alpha=alpha, desc=desc, start=start, num=num)
+    results = pipeline.execute(0
+    return results[0], results[1], id
+
+
 ##Simple tests
 
 conn = redis.Redis()
